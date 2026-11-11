@@ -10,9 +10,9 @@ class ItemHomepage {
 class MyHomePage extends StatelessWidget {
   MyHomePage({super.key});
 
-  final String npm = "2406000001";
-  final String nama = "Burhan";
-  final String kelas = "PBP A";
+  final String npm = "2506621592";
+  final String nama = "Rafata Zahi Cherie";
+  final String kelas = "PBP C";
 
   final List<ItemHomepage> items = [
     ItemHomepage("Lihat Proyek", Icons.folder),
