@@ -5,7 +5,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myportofolio_mobile/main.dart';
 
@@ -29,17 +29,31 @@ void main() {
 
     // Verifikasi ketiga tombol aksi tampil.
     expect(find.text('Lihat Portofolio'), findsOneWidget);
-    expect(find.text('Tambah Item'), findsOneWidget);
+    expect(find.text('Tambah Proyek'), findsOneWidget);
     expect(find.text('Logout'), findsOneWidget);
 
-    // SnackBar belum muncul sebelum tombol ditekan.
-    expect(find.text('Kamu telah menekan tombol Tambah Item!'), findsNothing);
-
-    // Tekan tombol 'Tambah Item' dan picu frame.
-    await tester.tap(find.text('Tambah Item'));
+    // Tombol yang tidak berpindah halaman hanya memunculkan SnackBar.
+    await tester.tap(find.text('Lihat Portofolio'));
     await tester.pump();
+    expect(
+      find.text('Kamu telah menekan tombol Lihat Portofolio!'),
+      findsOneWidget,
+    );
+  });
 
-    // Verifikasi SnackBar muncul dengan pesan yang sesuai.
-    expect(find.text('Kamu telah menekan tombol Tambah Item!'), findsOneWidget);
+  testWidgets('Tombol Tambah Proyek membuka halaman form proyek',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const MyApp());
+
+    await tester.tap(find.text('Tambah Proyek'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add Project Form'), findsOneWidget);
+    expect(find.text('Save'), findsOneWidget);
+    expect(find.byType(Form), findsOneWidget);
   });
 }
