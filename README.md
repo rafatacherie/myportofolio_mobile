@@ -179,3 +179,45 @@ Dalam tugas ini, saya menggunakan Claude untuk membantu mengimplementasikan pers
 - **Perbaikan Manual (oleh Saya)**: Untuk mengatasi masalah tersebut, saya memeriksa kembali kode dan menyesuaikan ukuran serta tata letak widget yang mengalami *overflow*. Perbaikan dilakukan agar seluruh elemen dapat ditampilkan dengan baik, tidak saling bertumpuk, dan tetap sesuai dengan ukuran layar.
 
 ---
+
+### Tugas 8
+
+1. Perbedaan `Navigator.push()`, `Navigator.pushReplacement()`, dan `Navigator.pop()`
+    
+    `Navigator.push()` menambahkan route baru di atas tumpukan (*stack*) route, sehingga halaman sebelumnya tetap ada di bawahnya dan pengguna bisa kembali dengan tombol Back. `Navigator.pushReplacement()` mengganti route yang sedang tampil dengan route baru, jadi route lama dibuang dari stack dan tidak bisa dikembalikan dengan tombol Back. `Navigator.pop()` menghapus route teratas dan menampilkan route di bawahnya; pada proyek ini `pop` dipakai untuk menutup `AlertDialog` lewat tombol OK. 
+    
+    Formulir pengalaman dari kartu aksi dibuka dengan `Navigator.push()` (di `onTap` milik `ItemCard`), sehingga pengguna dapat kembali dengan tombol Back. Opsi Home pada drawer memakai `Navigator.pushReplacement()` ke `MyHomePage()`: halaman formulir yang sedang tampil diganti dengan halaman utama, sehingga dari halaman formulir pengguna langsung sampai ke halaman utama tanpa menumpuk halaman formulir di belakangnya. Karena formulir dibuka dari halaman utama dengan `push`, di bawah stack masih ada instance halaman utama sebelumnya; `pushReplacement` hanya mengganti route yang paling atas.
+
+2. Struktur `Scaffold`, `AppBar`, dan `Drawer` untuk menjaga konsistensi
+    
+    `Scaffold` menyediakan kerangka yang sama di setiap halaman (bar atas, drawer, isi halaman, dan tempat `SnackBar`), sehingga pengguna selalu menemukan elemen navigasi di posisi yang sama. `AppBar` memberi judul dan identitas visual halaman, sedangkan `Drawer` dibuat sekali sebagai widget `LeftDrawer` lalu dipakai di halaman utama, form proyek, dan form pengalaman, jadi menu navigasinya identik di semua halaman dan hanya perlu diubah di satu tempat.
+    
+    Contoh pemakaian warna tema: `Colors.indigo` dipakai pada `AppBar` halaman form proyek dan form pengalaman, pada `DrawerHeader`, dan pada tombol Simpan. Halaman utama memakai `colorScheme.primary` yang berasal dari seed `Colors.indigo` di `main.dart`, sehingga warna bar atas konsisten di semua halaman.
+
+3. Pemilihan tata letak formulir
+    
+    Formulir disusun sebagai `Form` yang membungkus `SingleChildScrollView` berisi `Column` dengan `crossAxisAlignment.start`. `Column` dipilih karena field formulir disusun secara vertikal, satu per baris, sehingga mudah dibaca dan diisi berurutan. Setiap field dibungkus `Padding` agar ada jarak antar-field dan terhadap tepi layar, sehingga tampilan tidak terlalu rapat.
+    
+    `SingleChildScrollView` berperan penting saat ruang layar terbatas, misalnya di ponsel berlayar kecil atau saat papan ketik tampil menutupi sebagian layar. Tanpa itu, konten yang melebihi tinggi layar akan overflow dan tombol Save bisa tidak terjangkau. Pada kedua formulir, scroll memungkinkan semua field dan tombol Save tetap dijangkau dengan menggulir halaman.
+
+4. **Peran `GlobalKey<FormState>`, `validator`, dan `validate()`
+
+    `GlobalKey<FormState>` adalah pegangan unik ke state `Form`, sehingga tombol Simpan (yang berada di luar field) dapat memanggil `validate()` dan `reset()` pada seluruh form. `validator` adalah fungsi pada tiap field yang mengembalikan teks pesan kesalahan bila isian tidak memenuhi aturan, atau `null` bila valid. `validate()` menjalankan semua `validator`, menampilkan pesan kesalahan di bawah field yang tidak valid, lalu mengembalikan `true` hanya jika semua field valid; hasilnya dipakai pada `if (_formKey.currentState!.validate())` sebelum `showDialog()` ditampilkan.
+    
+    Contoh nilai yang ditolak: nama pengalaman berisi hanya spasi (`"   "`) ditolak karena setelah `trim()` kosong; tanggal selesai yang lebih awal dari tanggal mulai ditolak; dan deskripsi lebih dari 1000 karakter ditolak. Memilih jenis input atau papan ketik saja belum cukup karena input hanya membatasi cara pengisian, bukan aturan maknanya. Teks bebas pada `TextFormField` tetap bisa dikosongkan, diisi spasi, atau melewati batas panjang, dan date picker memang mencegah salah format tanggal tetapi tidak menjamin tanggal selesai berada setelah tanggal mulai, sehingga validasi tetap diperlukan.
+
+---
+
+### Penggunaan AI Tugas 8
+
+Dalam tugas ini, saya menggunakan Claude untuk membantu mengimplementasikan persyaratan Tugas 8 pada proyek Flutter, termasuk penyesuaian kode dan tampilan aplikasi agar sesuai dengan ketentuan tugas.
+
+**Lampiran Prompting:**
+- **Tampilan Fitur**: Bagaimana mengimplementasikan seluruh persyaratan yang telah ditentukan dalam Tugas 8 ke dalam proyek Flutter ini?
+
+**AI Disclosure & Analisis**
+- **Tools yang Digunakan**: Claude
+- **Analisis Keterbatasan AI**: AI terkadang menentukan sendiri field yang perlu dimasukkan ke dalam form, sehingga terdapat perbedaan field dengan yang terdapat pada website.
+- **Perbaikan Manual (oleh Saya)**: Saya meninjau kembali field pada form, kemudian menyesuaikannya dengan field yang diminta pada website agar form yang dibuat sesuai dengan website tersebut.
+
+---

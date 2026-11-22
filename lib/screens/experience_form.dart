@@ -110,7 +110,6 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
         // Konten bisa di-scroll agar semua field dan tombol Simpan tetap
         // terjangkau pada layar sempit atau saat papan ketik tampil.
         child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
