@@ -21,8 +21,9 @@ class MyHomePage extends StatelessWidget {
 
   // Tiga tombol aksi dengan warna berbeda.
   final List<ItemHomepage> items = [
-    ItemHomepage("Lihat Portofolio", Icons.folder, Colors.blue),
-    ItemHomepage("Tambah Proyek", Icons.add_circle, Colors.green),
+    ItemHomepage("View Portfolio", Icons.folder, Colors.blue),
+    ItemHomepage("Add Project", Icons.add_circle, Colors.green),
+    ItemHomepage("Add Experience", Icons.work, Colors.orange),
     ItemHomepage("Logout", Icons.logout, Colors.red),
   ];
 
@@ -34,10 +35,7 @@ class MyHomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'MyPortfolio',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         // Ikon drawer (hamburger) dibuat putih agar terlihat di atas AppBar.
@@ -71,7 +69,7 @@ class MyHomePage extends StatelessWidget {
                     const Padding(
                       padding: EdgeInsets.only(top: 16.0),
                       child: Text(
-                        'Selamat datang di MyPortfolio Mobile!',
+                        'Welcome to MyPortfolio Mobile!',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18.0,
@@ -86,8 +84,16 @@ class MyHomePage extends StatelessWidget {
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           final width = constraints.maxWidth;
-                          final columns = width >= 900 ? 3 : width >= 600 ? 2 : 1;
-                          final ratio = width >= 900 ? 2.0 : width >= 600 ? 1.6 : 2.5;
+                          final columns = width >= 900
+                              ? 3
+                              : width >= 600
+                              ? 2
+                              : 1;
+                          final ratio = width >= 900
+                              ? 2.0
+                              : width >= 600
+                              ? 1.6
+                              : 2.5;
                           final cardWidth =
                               (width - 10 * (columns - 1)) / columns;
 
@@ -133,15 +139,9 @@ class InfoCard extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8.0),
-            Text(
-              content,
-              textAlign: TextAlign.center,
-            ),
+            Text(content, textAlign: TextAlign.center),
           ],
         ),
       ),

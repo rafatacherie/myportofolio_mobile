@@ -17,7 +17,8 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
   String _description = "";
   String _category = "Web Development"; // default
   String _technologies = "";
-  String _projectLink = "";
+  String _projectUrl = "";
+  String _projectImageUrl = "";
 
   final List<String> _categories = [
     'Web Development',
@@ -27,15 +28,26 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
     'Other',
   ];
 
+  String? _validateUrl(String? value, {bool optional = false}) {
+    final trimmedValue = value?.trim() ?? "";
+    if (trimmedValue.isEmpty) {
+      return optional ? null : "Project URL is required.";
+    }
+
+    final uri = Uri.tryParse(trimmedValue);
+    if (uri == null ||
+        (uri.scheme != "http" && uri.scheme != "https") ||
+        uri.host.isEmpty) {
+      return "Enter a valid URL starting with http:// or https://.";
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Center(
-          child: Text(
-            'Add Project Form',
-          ),
-        ),
+        title: const Center(child: Text('Add Project Form')),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
       ),
@@ -52,8 +64,8 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
                   decoration: InputDecoration(
-                    hintText: "Nama Proyek",
-                    labelText: "Nama Proyek",
+                    hintText: "Project name",
+                    labelText: "Project Name",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(5.0),
                     ),
@@ -65,7 +77,7 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                   },
                   validator: (String? value) {
                     if (value == null || value.trim().isEmpty) {
-                      return "Nama proyek tidak boleh kosong!";
+                      return "Project name is required.";
                     }
                     return null;
                   },
@@ -78,8 +90,8 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                 child: TextFormField(
                   maxLines: 5,
                   decoration: InputDecoration(
-                    hintText: "Deskripsi Proyek",
-                    labelText: "Deskripsi Proyek",
+                    hintText: "Describe your project",
+                    labelText: "Project Description",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(5.0),
                     ),
@@ -91,7 +103,7 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                   },
                   validator: (String? value) {
                     if (value == null || value.trim().isEmpty) {
-                      return "Deskripsi proyek tidak boleh kosong!";
+                      return "Project description is required.";
                     }
                     return null;
                   },
@@ -102,18 +114,21 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: DropdownButtonFormField<String>(
+                  isExpanded: true,
                   decoration: InputDecoration(
-                    labelText: "Kategori Proyek",
+                    labelText: "Project Category",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(5.0),
                     ),
                   ),
                   initialValue: _category,
                   items: _categories
-                      .map((category) => DropdownMenuItem(
-                            value: category,
-                            child: Text(category),
-                          ))
+                      .map(
+                        (category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(category),
+                        ),
+                      )
                       .toList(),
                   onChanged: (String? newValue) {
                     setState(() {
@@ -128,8 +143,8 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
                   decoration: InputDecoration(
-                    hintText: "Contoh: Flutter, Django, Figma",
-                    labelText: "Teknologi yang Digunakan",
+                    hintText: "For example: Flutter, Django, Figma",
+                    labelText: "Technologies Used",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(5.0),
                     ),
@@ -139,25 +154,52 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                       _technologies = value!;
                     });
                   },
+                  validator: (String? value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "Technologies used are required.";
+                    }
+                    return null;
+                  },
                 ),
               ),
 
-              // === Project Link ===
+              // === Project URL ===
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
                   decoration: InputDecoration(
-                    hintText: "URL Proyek (opsional)",
-                    labelText: "Tautan Proyek",
+                    hintText: "https://example.com",
+                    labelText: "Project URL",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(5.0),
                     ),
                   ),
                   onChanged: (String? value) {
                     setState(() {
-                      _projectLink = value!;
+                      _projectUrl = value!;
                     });
                   },
+                  validator: (value) => _validateUrl(value),
+                ),
+              ),
+
+              // === Project Image URL ===
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextFormField(
+                  decoration: InputDecoration(
+                    hintText: "https://example.com/image.png (optional)",
+                    labelText: "Project Image URL (optional)",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(5.0),
+                    ),
+                  ),
+                  onChanged: (String? value) {
+                    setState(() {
+                      _projectImageUrl = value!;
+                    });
+                  },
+                  validator: (value) => _validateUrl(value, optional: true),
                 ),
               ),
 
@@ -176,16 +218,27 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                           context: context,
                           builder: (context) {
                             return AlertDialog(
-                              title: const Text('Proyek berhasil ditambahkan!'),
+                              title: const Text('Project added successfully!'),
                               content: SingleChildScrollView(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Nama Proyek: $_projectName'),
-                                    Text('Deskripsi: $_description'),
-                                    Text('Kategori: $_category'),
-                                    Text('Teknologi: $_technologies'),
-                                    Text('Tautan: $_projectLink'),
+                                    Text(
+                                      'Project Name: ${_projectName.trim()}',
+                                    ),
+                                    Text(
+                                      'Project Description: ${_description.trim()}',
+                                    ),
+                                    Text('Project Category: $_category'),
+                                    Text(
+                                      'Technologies Used: ${_technologies.trim()}',
+                                    ),
+                                    Text(
+                                      'Project URL: ${_projectUrl.trim().isEmpty ? 'Not provided' : _projectUrl.trim()}',
+                                    ),
+                                    Text(
+                                      'Project Image URL: ${_projectImageUrl.trim().isEmpty ? 'Not provided' : _projectImageUrl.trim()}',
+                                    ),
                                   ],
                                 ),
                               ),
@@ -195,13 +248,14 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                                   onPressed: () {
                                     Navigator.pop(context);
                                     _formKey.currentState!.reset();
-                                  setState(() {
-                                    _projectName = "";
-                                    _description = "";
-                                    _category = _categories.first;
-                                    _technologies = "";
-                                    _projectLink = "";
-                                  });
+                                    setState(() {
+                                      _projectName = "";
+                                      _description = "";
+                                      _category = _categories.first;
+                                      _technologies = "";
+                                      _projectUrl = "";
+                                      _projectImageUrl = "";
+                                    });
                                   },
                                 ),
                               ],
