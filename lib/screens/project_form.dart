@@ -1,5 +1,13 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
+import 'package:http/http.dart' show ClientException;
+import 'package:myportofolio_mobile/models/project.dart';
+import 'package:myportofolio_mobile/services/api_client.dart';
+import 'package:myportofolio_mobile/services/auth_state.dart';
 import 'package:myportofolio_mobile/widgets/left_drawer.dart';
+import 'package:myportofolio_mobile/widgets/auth_guard.dart';
+import 'package:provider/provider.dart';
 
 class ProjectFormPage extends StatefulWidget {
   const ProjectFormPage({super.key});
@@ -13,20 +21,12 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
   final _formKey = GlobalKey<FormState>();
 
   // Variabel penyimpan input dari tiap field.
-  String _projectName = "";
+  String _title = "";
   String _description = "";
-  String _category = "Web Development"; // default
-  String _technologies = "";
+  String _techStack = "";
   String _projectUrl = "";
   String _projectImageUrl = "";
-
-  final List<String> _categories = [
-    'Web Development',
-    'Mobile Development',
-    'Machine Learning',
-    'Data Science',
-    'Other',
-  ];
+  bool _isSubmitting = false;
 
   String? _validateUrl(String? value, {bool optional = false}) {
     final trimmedValue = value?.trim() ?? "";
@@ -43,11 +43,125 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
     return null;
   }
 
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      if (!await ensureLoggedIn(context) || !mounted) return;
+
+      final token = context.read<AuthState>().token;
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to add a project.')),
+        );
+        return;
+      }
+
+      final project = Project(
+        title: _title.trim(),
+        description: _description.trim(),
+        techStack: _techStack.trim(),
+        projectUrl: _projectUrl.trim(),
+        projectImageUrl: _projectImageUrl.trim(),
+      );
+      final createdProject = await context.read<ApiClient>().createProject(
+        project,
+        token: token,
+      );
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
+
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Project created successfully!'),
+          content: Text(createdProject.title),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
+
+      _formKey.currentState!.reset();
+      setState(() {
+        _title = "";
+        _description = "";
+        _techStack = "";
+        _projectUrl = "";
+        _projectImageUrl = "";
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      if (error.statusCode == 401) {
+        var logoutFailure = '';
+        try {
+          await context.read<AuthState>().logout();
+        } on ApiException catch (logoutError) {
+          logoutFailure =
+              ' The server returned ${logoutError.statusCode} while revoking the old token.';
+        } on ClientException {
+          logoutFailure = ' The server could not revoke the old token.';
+        }
+        if (!mounted) return;
+        setState(() {
+          _isSubmitting = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Session expired. Please log in again.$logoutFailure',
+            ),
+          ),
+        );
+        await ensureLoggedIn(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not create project (${error.statusCode}).'),
+          ),
+        );
+      }
+    } on ClientException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not reach the server.')),
+      );
+    } on TimeoutException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('The request timed out.')));
+    } on FormatException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('The server returned an invalid response.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Center(child: Text('Add Project Form')),
+        title: const Center(child: Text('Add New Project')),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
       ),
@@ -59,12 +173,12 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // === Project Name ===
+              // === Title ===
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
                   decoration: InputDecoration(
-                    hintText: "Project name",
+                    hintText: "Project title",
                     labelText: "Project Name",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(5.0),
@@ -72,12 +186,12 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                   ),
                   onChanged: (String? value) {
                     setState(() {
-                      _projectName = value!;
+                      _title = value!;
                     });
                   },
                   validator: (String? value) {
                     if (value == null || value.trim().isEmpty) {
-                      return "Project name is required.";
+                      return "Title is required.";
                     }
                     return null;
                   },
@@ -90,7 +204,7 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                 child: TextFormField(
                   maxLines: 5,
                   decoration: InputDecoration(
-                    hintText: "Describe your project",
+                    hintText: "Describe the project",
                     labelText: "Project Description",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(5.0),
@@ -103,60 +217,32 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                   },
                   validator: (String? value) {
                     if (value == null || value.trim().isEmpty) {
-                      return "Project description is required.";
+                      return "Description is required.";
                     }
                     return null;
                   },
                 ),
               ),
 
-              // === Category ===
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: "Project Category",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(5.0),
-                    ),
-                  ),
-                  initialValue: _category,
-                  items: _categories
-                      .map(
-                        (category) => DropdownMenuItem(
-                          value: category,
-                          child: Text(category),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _category = newValue!;
-                    });
-                  },
-                ),
-              ),
-
-              // === Technologies ===
+              // === Tech Stack ===
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
                   decoration: InputDecoration(
                     hintText: "For example: Flutter, Django, Figma",
-                    labelText: "Technologies Used",
+                    labelText: "Technology Used",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(5.0),
                     ),
                   ),
                   onChanged: (String? value) {
                     setState(() {
-                      _technologies = value!;
+                      _techStack = value!;
                     });
                   },
                   validator: (String? value) {
                     if (value == null || value.trim().isEmpty) {
-                      return "Technologies used are required.";
+                      return "Technology used is required.";
                     }
                     return null;
                   },
@@ -189,7 +275,7 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                 child: TextFormField(
                   decoration: InputDecoration(
                     hintText: "https://example.com/image.png (optional)",
-                    labelText: "Project Image URL (optional)",
+                    labelText: "Project Image URL",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(5.0),
                     ),
@@ -212,62 +298,17 @@ class _ProjectFormPageState extends State<ProjectFormPage> {
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.all(Colors.indigo),
                     ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: const Text('Project added successfully!'),
-                              content: SingleChildScrollView(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Project Name: ${_projectName.trim()}',
-                                    ),
-                                    Text(
-                                      'Project Description: ${_description.trim()}',
-                                    ),
-                                    Text('Project Category: $_category'),
-                                    Text(
-                                      'Technologies Used: ${_technologies.trim()}',
-                                    ),
-                                    Text(
-                                      'Project URL: ${_projectUrl.trim().isEmpty ? 'Not provided' : _projectUrl.trim()}',
-                                    ),
-                                    Text(
-                                      'Project Image URL: ${_projectImageUrl.trim().isEmpty ? 'Not provided' : _projectImageUrl.trim()}',
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  child: const Text('OK'),
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    _formKey.currentState!.reset();
-                                    setState(() {
-                                      _projectName = "";
-                                      _description = "";
-                                      _category = _categories.first;
-                                      _technologies = "";
-                                      _projectUrl = "";
-                                      _projectImageUrl = "";
-                                    });
-                                  },
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      }
-                    },
-                    child: const Text(
-                      "Save",
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    onPressed: _isSubmitting ? null : _submit,
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text(
+                            "Save",
+                            style: TextStyle(color: Colors.white),
+                          ),
                   ),
                 ),
               ),
